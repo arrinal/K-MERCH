@@ -41,15 +41,12 @@ struct CartView: View {
                         if viewModel.cart.insideCart[index].quantity >= 1 {
                             Divider()
                                 HStack {
-                                    RemoteImageView(url: URL(string: viewModel.cart.insideCart[index].item.image)!).imageProcessing({ image in
-                                        return image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                    })
+                                    AsyncImage(url: URL(string: viewModel.cart.insideCart[index].item.image)!, placeholder: { Image("not-found").resizable().aspectRatio(contentMode: .fit).frame(width: 100, height: 100).cornerRadius(10) })
+                                        .aspectRatio(contentMode: .fit)
                                         .frame(width: 100, height: 100)
                                         .cornerRadius(10)
                                     VStack(alignment: .leading) {
-                                        Text("\(viewModel.cart.insideCart[index].item.name)")
+                                        Text(viewModel.cart.insideCart[index].item.name)
                                             .padding(.top, 5)
                                         Text("\(viewModel.cart.insideCart[index].item.category)")
                                             .font(.footnote)
@@ -62,19 +59,8 @@ struct CartView: View {
                                     
                                     HStack {
                                         Button {
-                                            guard viewModel.cart.insideCart[index].quantity > 0 else {
-                                                viewModel.cart.insideCart.remove(at: index)
-                                                return
-                                            }
-//                                            if viewModel.cart.insideCart[index].quantity <= 0 {
-//                                                viewModel.cart.insideCart.remove(at: index)
-//                                            }
-                                            withAnimation {
-                                                viewModel.cart.insideCart[index].quantity -= 1
-                                            }
-                                            viewModel.cart.insideCart[index].itemPriceTotal -= viewModel.cart.insideCart[index].item.price
-                                            viewModel.cart.subTotal -= viewModel.cart.insideCart[index].item.price
-                                            print(viewModel.cart.insideCart[index].itemPriceTotal)
+                                            viewModel.removeItemFromCart(index: index)
+                                            viewModel.subtractItemQuantity(index: index)
                                         } label: {
                                             Image(systemName: "minus.circle")
                                         }
@@ -82,10 +68,7 @@ struct CartView: View {
                                         Text("\(viewModel.cart.insideCart[index].quantity)")
                                         
                                         Button {
-                                            viewModel.cart.insideCart[index].quantity += 1
-                                            viewModel.cart.insideCart[index].itemPriceTotal += viewModel.cart.insideCart[index].item.price
-                                            viewModel.cart.subTotal += viewModel.cart.insideCart[index].item.price
-                                            print(viewModel.cart.insideCart[index].itemPriceTotal)
+                                            viewModel.addItemQuantity(index: index)
                                         } label: {
                                             Image(systemName: "plus.circle")
                                         }

@@ -1,5 +1,5 @@
 //
-//  ProfileView.swift
+//  TemporaryPopUp.swift
 //  K-MERCH
 //
 //  Created by Arrinal Sholifadliq on 22/10/21.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ProfileView: View {
+struct TemporaryPopUp: View {
     @Binding var isActive: Bool
     let text: String
     

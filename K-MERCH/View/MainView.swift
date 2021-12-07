@@ -10,9 +10,7 @@ import SwiftUI
 struct MainView: View {
     @State var top = UIApplication.shared.windows.first?.safeAreaInsets.top
     @StateObject var viewModel = ViewModel()
-    @State var isNavigateToCart = false
-    @State var isNavigateToItem = false
-    @State var itemz = Item()
+    @State var item = Item()
     
     let layout = [
         GridItem(.flexible(minimum: 170)),
@@ -52,8 +50,8 @@ struct MainView: View {
                                         if item.isFeatured {
                                             ImageCardView(img: item.image , title: item.name)
                                                 .onTapGesture {
-                                                    itemz = item
-                                                    isNavigateToItem = true
+                                                    self.item = item
+                                                    viewModel.navigationSelection = "Item View"
                                                 }
                                             
                                         }
@@ -68,7 +66,19 @@ struct MainView: View {
                                 Spacer()
                             }
                             
-                            BestSellerGridView(items: viewModel.items)
+                            ScrollView {
+                                LazyVGrid(columns: layout) {
+                                    ForEach(viewModel.items) { item in
+                                        if item.isBestSeller {
+                                            BestSellerGridView(name: item.name, img: item.image, price: item.price)
+                                                .onTapGesture {
+                                                    self.item = item
+                                                    viewModel.navigationSelection = "Item View"
+                                                }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     
@@ -89,7 +99,7 @@ struct MainView: View {
                     }
             }
             .onAppear {
-                viewModel.getItems()
+//                viewModel.getItems()
             }
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -102,26 +112,23 @@ struct MainView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Image(systemName: "cart.fill")
                         .onTapGesture {
-                            isNavigateToCart = true
-                            print(isNavigateToCart)
+                            viewModel.navigationSelection = "Cart View"
                         }
                 }
             }
             .background(
-                NavigationLink(destination: CartView(), isActive: $isNavigateToCart) {
+                NavigationLink(destination: CartView(), tag: "Cart View", selection: $viewModel.navigationSelection) {
                     EmptyView()
                 }
             )
             .background(
-                NavigationLink(destination: ItemView(item: itemz), isActive: $isNavigateToItem) {
+                NavigationLink(destination: ItemView(item: item), tag: "Item View", selection: $viewModel.navigationSelection) {
                     EmptyView()
                 }
             )
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .environmentObject(viewModel)
-        
-        
     }
 }
 

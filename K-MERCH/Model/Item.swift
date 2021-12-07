@@ -6,8 +6,9 @@
 //
 
 import Foundation
-
-struct Item: Identifiable, Codable, Hashable {
+import CloudKit
+// pakai identifiable
+struct Item: Hashable, Identifiable {
     let id: Int
     let name: String
     let image: String
@@ -16,9 +17,10 @@ struct Item: Identifiable, Codable, Hashable {
     let description: String
     let isFeatured: Bool
     let isBestSeller: Bool
+    var recordID: CKRecord.ID?
     
     
-    init(id: Int = 0, name: String = "", image: String = "", price: Int = 0, category: String = "" , description: String = "", isFeatured: Bool = false, isBestSeller: Bool = false) {
+    init(id: Int = 0, name: String = "", image: String = "", price: Int = 0, category: String = "" , description: String = "", isFeatured: Bool = false, isBestSeller: Bool = false, recordID: CKRecord.ID = .init(recordName: "000")) {
         self.id = id
         self.name = name
         self.image = image
@@ -27,5 +29,6 @@ struct Item: Identifiable, Codable, Hashable {
         self.description = description
         self.isFeatured = isFeatured
         self.isBestSeller = isBestSeller
+        self.recordID = recordID
     }
 }

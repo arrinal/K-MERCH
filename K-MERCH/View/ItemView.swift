@@ -21,11 +21,8 @@ struct ItemView: View {
             HStack {
                 Spacer()
                 Divider()
-                RemoteImageView(url: URL(string: item.image)!).imageProcessing({ image in
-                    return image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                })
+                AsyncImage(url: URL(string: item.image)!, placeholder: { Image("not-found").resizable().aspectRatio(contentMode: .fit).frame(width: 200, height: 200).cornerRadius(10) })
+                    .aspectRatio(contentMode: .fit)
                     .frame(width: 200, height: 200)
                     .cornerRadius(10)
                 Divider()
@@ -94,7 +91,7 @@ struct ItemView: View {
                     .background(Color.blue)
                     .cornerRadius(20)
                     
-                    ProfileView(isActive: $isAddedToCart, text: "Added to cart.")
+                    TemporaryPopUp(isActive: $isAddedToCart, text: "Added to cart.")
                         .offset(y: -70)
                         .onAppear {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -137,8 +134,8 @@ struct ItemView: View {
     }
 }
 
-struct ItemView_Previews: PreviewProvider {
-    static var previews: some View {
-        ItemView(item: Item(id: 1, name: "BTS Love Yourself (Tear)", image: "https://arrinal.com/kmerchImg/a.jpeg", price: 290000, category: "Album", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.", isFeatured: false, isBestSeller: true))
-    }
-}
+//struct ItemView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        ItemView(item: Item(id: 1, name: "BTS Love Yourself (Tear)", image: "https://arrinal.com/kmerchImg/a.jpeg", price: 290000, category: "Album", description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.", isFeatured: false, isBestSeller: true))
+//    }
+//}

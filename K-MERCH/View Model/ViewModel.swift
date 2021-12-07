@@ -9,8 +9,10 @@ import Foundation
 import Combine
 import SwiftyJSON
 import SwiftUI
+import CloudKit
 
 class ViewModel: ObservableObject {
+    @Published var navigationSelection: String? = nil
     @Published var items: [Item] = []
     @Published var cart = Cart()
     @Published var shippingAddress = ShippingAddress()
@@ -19,9 +21,9 @@ class ViewModel: ObservableObject {
     @Published var deliveryMenu = [Delivery]()
     @Published var text = ""
     @Published var finalBuy = FinalBuy()
+    @Published var orderPlaced = OrderPlaced()
+    @Published var orderList = [OrderPlaced]()
     @Published var paymentMethodMenu: [PaymentMethod] = [PaymentMethod(bankName: "Bank BCA", image: "bca")]
-    
-    var cancellables = Set<AnyCancellable>()
     
     
     var totalItems: Int {
@@ -31,6 +33,120 @@ class ViewModel: ObservableObject {
                 total += each.quantity
             }
             return total
+        }
+    }
+    
+    
+    init() {
+        fetchItemsCloudKit()
+    }
+    
+    func fetchItemsCloudKit() {
+        let predicate = NSPredicate(value: true)
+        let query = CKQuery(recordType: "item", predicate: predicate)
+        let queryOperation = CKQueryOperation(query: query)
+//        queryOperation.resultsLimit = 6
+        
+        var returnedItems: [Item] = []
+        
+        if #available(iOS 15.0, *) {
+            queryOperation.recordMatchedBlock = { (returnedRecordID, returnedResult) in
+                switch returnedResult {
+                case .success(let record):
+                    returnedItems += self.addToItemListCloudKit(list: record)
+                   
+                    
+                case .failure(let error):
+                    print(error)
+                }
+            }
+        } else {
+            queryOperation.recordFetchedBlock = { [self] (returnedRecord) in
+                returnedItems += addToItemListCloudKit(list: returnedRecord)
+                
+            }
+        }
+        
+        
+        if #available(iOS 15.0, *) {
+            queryOperation.queryResultBlock = { [weak self] returnedResult in
+                print("returned result: \(returnedResult)")
+                print(returnedItems)
+                DispatchQueue.main.async {
+                    self?.items = returnedItems
+                }
+                
+                
+            }
+        } else {
+            queryOperation.queryCompletionBlock = { [weak self] (returnedCursor, returnedError) in
+                print("returned querycompletionblock")
+                DispatchQueue.main.async {
+                    self?.items = returnedItems
+                }
+                
+            }
+        }
+        
+        CKContainer.default().publicCloudDatabase.add(queryOperation)
+    }
+    
+    func addToItemListCloudKit(list: CKRecord) -> [Item] {
+        let id = list["id"] as! Int
+        let name = list["name"] as! String
+        let image = list["image"] as! String
+        let price = list["price"] as! Int
+        let category = list["category"] as! String
+        let description = list["description"] as? String ?? ""
+        let isFeatured = list["isFeatured"] as! Int
+        let isBestSeller = list["isBestSeller"] as! Int
+        let recordID = list.recordID
+        
+        return [Item(id: id, name: name, image: image, price: price, category: category, description: description, isFeatured: Bool(truncating: isFeatured as NSNumber), isBestSeller: Bool(truncating: isBestSeller as NSNumber), recordID: recordID)]
+    }
+    
+    func onlyNumberAndLimitText(limit: Int, value: String, field: Binding<String>) {
+        limitText(limit)
+            let filtered = value.filter { "0123456789".contains($0) }
+                            if filtered != value {
+                                field.wrappedValue = filtered
+        }
+    }
+    
+    func updateCity(isShowCity: Binding<Bool>, city: City) {
+        shippingAddress.city = "\(city.type) \(city.city)"
+        fetchCost(cityId: city.id)
+        isShowCity.wrappedValue.toggle()
+    }
+    
+    func updateProvince(isShowProvince: Binding<Bool>, province: Province) {
+        shippingAddress.province = province.province
+        shippingAddress.city = "City"
+        withAnimation {
+            deliveryMenu = []
+        }
+        fetchCity(idProvince: province.id)
+        isShowProvince.wrappedValue.toggle()
+    }
+    
+    func subtractItemQuantity(index: Int) {
+        withAnimation {
+            cart.insideCart[index].quantity -= 1
+        }
+        cart.insideCart[index].itemPriceTotal -= Int(cart.insideCart[index].item.price)
+        cart.subTotal -= Int(cart.insideCart[index].item.price)
+    }
+    
+    func addItemQuantity(index: Int) {
+        cart.insideCart[index].quantity += 1
+        cart.insideCart[index].itemPriceTotal += Int(cart.insideCart[index].item.price)
+        cart.subTotal += Int(cart.insideCart[index].item.price)
+    }
+    
+    func removeItemFromCart(index: Int) {
+        guard cart.insideCart[index].quantity > 0 else {
+            cart.insideCart.remove(at: index)
+            return
         }
     }
     
@@ -53,39 +169,6 @@ class ViewModel: ObservableObject {
         finalBuy.totalPrice = deliveryPrice + cart.subTotal
     }
     
-    func getItems() {
-        guard let url = URL(string: "https://arrinal.com/kmerchd.php") else { return }
-        
-///         1. Create the publisher
-///         2. Subscribe publisher on background thread
-///         3. Receive on main thread
-///         4. tryMap (check that the data is good)
-///         5. Decode (decode data into Item)
-///         6. Sink (put the item into the app)
-///         7. Store (cancel subscription if needed)
-        
-        URLSession.shared.dataTaskPublisher(for: url)
-            .subscribe(on: DispatchQueue.global(qos: .background))
-            .receive(on: DispatchQueue.main)
-            .tryMap { (data, response) -> Data in
-                guard let response = response as? HTTPURLResponse,
-                      response.statusCode >= 200 && response.statusCode < 300 else {
-                          throw URLError(.badServerResponse)
-                }
-                return data
-            }
-            .decode(type: [Item].self, decoder: JSONDecoder())
-            .sink { (completion) in
-                print("COMPLETION: \(completion)")
-            } receiveValue: { [weak self] (returnedItems) in
-                self?.items = returnedItems
-            }
-            .store(in: &cancellables)
-
-        
-    }
-    
-    
     func fetchCost(cityId: String) {
         
         let headers = [
@@ -95,7 +178,7 @@ class ViewModel: ObservableObject {
 
         let postData = NSMutableData(data: "origin=153".data(using: String.Encoding.utf8)!)
         postData.append("&destination=\(cityId)".data(using: String.Encoding.utf8)!)
-        postData.append("&weight=1000".data(using: String.Encoding.utf8)!)
+        postData.append("&weight=\(totalItems * 1000)".data(using: String.Encoding.utf8)!)
         postData.append("&courier=jne".data(using: String.Encoding.utf8)!)
 
         let request = NSMutableURLRequest(url: NSURL(string: "https://api.rajaongkir.com/starter/cost")! as URL,
@@ -205,16 +288,4 @@ class ViewModel: ObservableObject {
 
         dataTask.resume()
     }
-    
-//    func addToCart(item: Item) {
-//        if let index = cart.insideCart.firstIndex(where: { $0.item == item }) {
-//            cart.insideCart[index].quantity += 1
-//            cart.insideCart[index].itemPriceTotal += item.price
-//            cart.subTotal += item.price
-//        } else {
-//            cart.insideCart += [InsideCart(item: item, quantity: 1, itemPriceTotal: item.price)]
-//            cart.subTotal += item.price
-//        }
-//
-//    }
 }

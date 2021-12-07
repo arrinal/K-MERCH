@@ -73,13 +73,7 @@ struct CheckoutShippingView: View {
                                     ForEach(viewModel.provinceList, id: \.self) { each in
                                         Text(each.province)
                                             .onTapGesture {
-                                                viewModel.shippingAddress.province = each.province
-                                                viewModel.shippingAddress.city = "City"
-                                                withAnimation {
-                                                    viewModel.deliveryMenu = []
-                                                }
-                                                viewModel.fetchCity(idProvince: each.id)
-                                                isShowProvince.toggle()
+                                                viewModel.updateProvince(isShowProvince: $isShowProvince, province: each)
                                             }
                                         Divider()
                                     }
@@ -105,9 +99,7 @@ struct CheckoutShippingView: View {
                                     ForEach(viewModel.cityList, id: \.self) { each in
                                         Text(" \(each.city) (\(each.type))")
                                             .onTapGesture {
-                                                viewModel.shippingAddress.city = "\(each.type) \(each.city)"
-                                                viewModel.fetchCost(cityId: each.id)
-                                                isShowCity.toggle()
+                                                viewModel.updateCity(isShowCity: $isShowCity, city: each)
                                             }
                                         Divider()
                                     }
@@ -121,17 +113,15 @@ struct CheckoutShippingView: View {
                         VStack {
                             TextField("Postal Code", text: $viewModel.shippingAddress.postalCode)
                                 .keyboardType(.numberPad)
-                                .onReceive(Just(viewModel.shippingAddress.postalCode)) { newValue in viewModel.limitText(5)
-                                    let filtered = newValue.filter { "0123456789".contains($0) }
-                                                    if filtered != newValue {
-                                                        self.viewModel.shippingAddress.postalCode = filtered
-                                }
+                                .onReceive(Just(viewModel.shippingAddress.postalCode)) { newValue in
+                                    viewModel.onlyNumberAndLimitText(limit: 5, value: newValue, field: $viewModel.shippingAddress.postalCode)
                                 }
                             Divider()
                         }
                         VStack {
                             TextField("Mobile Number", text: $viewModel.shippingAddress.mobileNumber)
-                                .onReceive(Just(viewModel.shippingAddress.mobileNumber)) { _ in viewModel.limitText(13) }
+                                .onReceive(Just(viewModel.shippingAddress.mobileNumber)) { newValue in viewModel.onlyNumberAndLimitText(limit: 13, value: newValue, field: $viewModel.shippingAddress.mobileNumber)
+                                }
                             Divider()
                         }
                     }
@@ -205,7 +195,7 @@ struct CheckoutShippingView: View {
                     .background(Color.blue)
                     .cornerRadius(20)
                     
-                    ProfileView(isActive: $isNotFilled, text: "Please fill all the shipping field and choose your delivery courier")
+                    TemporaryPopUp(isActive: $isNotFilled, text: "Please fill all the shipping field and choose your delivery courier")
                         .offset(y: -70)
                         .onAppear {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -238,6 +228,12 @@ struct CheckoutShippingView: View {
         .padding(.bottom)
         .onAppear {
             viewModel.fetchProvince()
+            if viewModel.shippingAddress.id != "" {
+                withAnimation {
+                    viewModel.deliveryMenu = []
+                }
+                viewModel.fetchCost(cityId: viewModel.shippingAddress.id)
+            }
         }
     }
 }

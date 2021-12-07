@@ -14,11 +14,8 @@ struct ImageCardView: View {
     
     var body: some View {
         VStack {
-            RemoteImageView(url: URL(string: img)!).imageProcessing({ image in
-                return image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            })
+            AsyncImage(url: URL(string: img)!, placeholder: { Image("not-found").resizable().aspectRatio(contentMode: .fit).frame(width: 200, height: 200).cornerRadius(10) })
+                .aspectRatio(contentMode: .fit)
                 .frame(width: 200, height: 200)
                 .cornerRadius(10)
             Text(title)

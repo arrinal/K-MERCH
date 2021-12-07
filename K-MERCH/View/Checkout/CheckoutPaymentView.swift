@@ -64,6 +64,12 @@ struct CheckoutPaymentView: View {
                         .font(.title2)
                 }
                 HStack {
+                    Text("Delivery")
+                    Spacer()
+                    Text("\(viewModel.finalBuy.delivery.price)")
+                        .font(.title2)
+                }
+                HStack {
                     Text("Total")
                         .bold()
                     Spacer()
@@ -96,11 +102,11 @@ struct CheckoutPaymentView: View {
                         .foregroundColor(.blue)
                 }
             }
-            //                .background(
-            //                    NavigationLink(destination: CheckoutPaymentView(), isActive: $isNavigateToPayment) {
-            //                        EmptyView()
-            //                    }
-            //                )
+                            .background(
+                                NavigationLink(destination: CheckoutReviewView(), isActive: $isNavigateToReview) {
+                                    EmptyView()
+                                }
+                            )
         }
         .padding(.top, -20)
         .padding(.leading)
@@ -112,5 +118,6 @@ struct CheckoutPaymentView: View {
 struct CheckoutPaymentView_Previews: PreviewProvider {
     static var previews: some View {
         CheckoutPaymentView()
+            .environmentObject(ViewModel())
     }
 }

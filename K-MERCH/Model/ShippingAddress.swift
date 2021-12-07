@@ -8,6 +8,7 @@
 import Foundation
 
 struct ShippingAddress {
+    var id: String = ""
     var fullName: String = ""
     var street: String = ""
     var district: String = ""
