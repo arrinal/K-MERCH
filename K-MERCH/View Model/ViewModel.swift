@@ -19,7 +19,7 @@ class ViewModel: ObservableObject {
     @Published var provinceList = [Province]()
     @Published var cityList = [City]()
     @Published var deliveryMenu = [Delivery]()
-    @Published var text = "bagong"
+    @Published var text = ""
     @Published var finalBuy = FinalBuy()
     @Published var orderPlaced = OrderPlaced()
     @Published var orderList = [OrderPlaced]()
