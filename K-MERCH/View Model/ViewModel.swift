@@ -5,6 +5,7 @@
 //  Created by Arrinal Sholifadliq on 02/11/21.
 //
 //test comment
+//test comment 2
 import Foundation
 import Combine
 import SwiftyJSON
